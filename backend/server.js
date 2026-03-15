@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const path = require('path');
-const db = require('./database');
+const db = require('../database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
