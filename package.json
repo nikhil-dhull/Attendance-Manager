@@ -1,19 +1,25 @@
 {
   "name": "new-folder",
   "version": "1.0.0",
-  "description": "",
+  "description": "Store Management System Backend",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "echo Build step not required for Node.js project",
+    "test": "echo \"No test specified\""
   },
   "keywords": [],
-  "author": "",
+  "author": "Nikhil Dhull",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
   }
 }
