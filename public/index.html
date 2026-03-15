@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Manager | Gen-Z Edition</title>
+    <meta name="description" content="A sleek, Gen-Z styled attendance manager to track 75% criteria.">
+    <!-- Google Fonts: Clash Display + Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <main class="dashboard">
+        <header class="header">
+            <div class="header-text">
+                <h1 class="title">Attendance <span class="gradient-text">Manager</span></h1>
+                <p class="subtitle">Stay above 75%. We'll do the math.</p>
+            </div>
+            <div class="user-controls">
+                <span id="user-info">Hey, <span id="display-username" class="gradient-text">Gen-Z User</span></span>
+                <button id="add-subject-btn" class="glass-btn primary-btn">+ New Subject</button>
+                <button id="logout-btn" class="icon-btn ghost-btn" title="Logout">🚪</button>
+            </div>
+        </header>
+
+        <style>
+            .user-controls {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+            }
+            #user-info {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            @media (max-width: 768px) {
+                .user-controls {
+                    width: 100%;
+                    justify-content: space-between;
+                }
+            }
+        </style>
+
+        <!-- Bento Grid for stats (optional overall stats) -->
+        <section class="overview bento-card">
+            <div class="stat-box">
+                <p>Overall Attendance</p>
+                <h2 id="overall-percentage" class="gradient-text">0%</h2>
+            </div>
+        </section>
+
+        <section class="subjects-grid" id="subjects-container">
+            <!-- Subject cards injected by JS -->
+        </section>
+    </main>
+
+    <!-- Modal for New Subject -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal glass-panel bento-card">
+            <h2>Add Subject</h2>
+            <form id="add-subject-form">
+                <div class="input-group">
+                    <label for="subject-name">Subject Name</label>
+                    <input type="text" id="subject-name" required placeholder="e.g. Data Structures" autocomplete="off">
+                </div>
+                <div class="actions">
+                    <button type="button" id="cancel-btn" class="glass-btn outline-btn">Cancel</button>
+                    <button type="submit" class="glass-btn primary-btn">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Edit Subject -->
+    <div id="edit-modal-overlay" class="modal-overlay hidden">
+        <div class="modal glass-panel bento-card">
+            <h2>Edit Subject</h2>
+            <form id="edit-subject-form">
+                <input type="hidden" id="edit-subject-id">
+                <div class="input-group">
+                    <label for="edit-subject-name">Subject Name</label>
+                    <input type="text" id="edit-subject-name" required placeholder="Subject Name" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="edit-subject-attended">Attended Classes</label>
+                    <input type="number" id="edit-subject-attended" required min="0">
+                </div>
+                <div class="input-group">
+                    <label for="edit-subject-total">Total Classes</label>
+                    <input type="number" id="edit-subject-total" required min="0">
+                </div>
+                <div class="actions">
+                    <button type="button" id="edit-cancel-btn" class="glass-btn outline-btn">Cancel</button>
+                    <button type="submit" class="glass-btn primary-btn">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Template for Subject Card styling testing -->
+    <template id="subject-card-template">
+        <article class="subject-card bento-card glass-panel">
+            <div class="card-header">
+                <h3 class="subject-title">Subject Name</h3>
+                <div class="percentage-badge">0%</div>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat">
+                    <span>Attended</span>
+                    <strong class="attended-val">0</strong>
+                </div>
+                <div class="stat">
+                    <span>Total</span>
+                    <strong class="total-val">0</strong>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill"></div>
+                <div class="threshold-line" title="75% Target"></div>
+            </div>
+
+            <div class="analysis-text">
+                <span class="status-message">Loading...</span>
+            </div>
+
+            <div class="action-buttons">
+                <button class="icon-btn attended-btn" title="I attended this class">+ Present</button>
+                <button class="icon-btn absent-btn" title="I missed this class">+ Absent</button>
+                <button class="icon-btn ghost-btn edit-btn" title="Edit subject">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <span>Edit</span>
+                </button>
+                <button class="icon-btn ghost-btn delete-btn" title="Delete subject">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+            </div>
+        </article>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>
