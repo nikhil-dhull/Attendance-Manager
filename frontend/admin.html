@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Insights | Attendance Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="dashboard">
+        <header class="header">
+            <div class="header-text">
+                <h1 class="title">Admin Dashboard</h1>
+                <p class="subtitle">Platform-wide analytics and insights.</p>
+            </div>
+            <div class="user-controls">
+                <a href="/index.html" class="btn outline-btn">Back to App</a>
+                <button id="logout-btn" class="btn outline-btn" style="padding: 0.75rem;">Sign Out</button>
+            </div>
+        </header>
+
+        <section class="overview grid-3">
+            <div class="bento-card stat-card">
+                <p class="stat-label">New Users (This Month)</p>
+                <h2 id="users-this-month">0</h2>
+            </div>
+            <div class="bento-card stat-card">
+                <p class="stat-label">Total Platform Users</p>
+                <h2 id="total-users">0</h2>
+            </div>
+            <div class="bento-card stat-card">
+                <p class="stat-label">Total Subjects Tracked</p>
+                <h2 id="total-subjects">0</h2>
+            </div>
+        </section>
+
+        <section class="admin-content" style="margin-top: 2rem;">
+            <div class="bento-card">
+                <h3>System Health</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Database connected and monitoring growth.</p>
+                <div style="padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); font-family: monospace; font-size: 0.875rem;">
+                    Status: Online <br>
+                    Uptime: Optimal <br>
+                    API: v1.0.0
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <style>
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .stat-card h2 {
+            font-size: 3.5rem;
+            margin: 0;
+            color: var(--accent-primary);
+        }
+    </style>
+
+    <script>
+        async function fetchAdminStats() {
+            try {
+                const res = await fetch('/api/admin/stats');
+                if (!res.ok) {
+                    if (res.status === 403 || res.status === 401) {
+                        window.location.href = '/index.html';
+                        return;
+                    }
+                    throw new Error('Failed to fetch stats');
+                }
+                const data = await res.json();
+                document.getElementById('users-this-month').textContent = data.usersThisMonth;
+                document.getElementById('total-users').textContent = data.totalUsers;
+                document.getElementById('total-subjects').textContent = data.totalSubjects;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function logout() {
+            try {
+                const res = await fetch('/api/logout', { method: 'POST' });
+                if (res.ok) window.location.href = '/login.html';
+            } catch (err) {
+                console.error('Logout failed', err);
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        fetchAdminStats();
+    </script>
+</body>
+</html>
