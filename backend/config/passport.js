@@ -15,10 +15,18 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
+const clientID = (process.env.GOOGLE_CLIENT_ID || '').trim();
+const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
+const callbackURL = (process.env.GOOGLE_CALLBACK_URL || '').trim();
+
+console.log('--- Google OAuth Configuration ---');
+console.log('CallbackURL:', callbackURL);
+console.log('-------------------------------');
+
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL
+    clientID,
+    clientSecret,
+    callbackURL
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         let user = await User.findOne({ googleId: profile.id });

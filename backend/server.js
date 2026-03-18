@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const User = require('./models/User');
 const Subject = require('./models/Subject');
 const passport = require('passport');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -155,66 +156,99 @@ app.get('/auth/google/callback',
     }
 );
 
-// Forgot Password
+// Forgot Password - Send OTP
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.trim() });
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        const crypto = require('crypto');
-        const token = crypto.randomBytes(20).toString('hex');
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordOTP = otp;
+        user.resetPasswordOTPExpires = Date.now() + 600000; // 10 minutes
         await user.save();
 
-        const nodemailer = require('nodemailer');
+
         const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: process.env.SMTP_PORT,
+            host: process.env.SMTP_HOST?.trim(),
+            // ye change ki h
+            port: parseInt(process.env.SMTP_PORT?.trim(), 10),
             secure: false,
             auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
+                user: process.env.SMTP_USER?.trim(),
+                pass: process.env.SMTP_PASS?.trim()
             }
         });
 
-        const resetUrl = `http://${req.headers.host}/reset-password.html?token=${token}`;
         const mailOptions = {
             to: user.email,
-            from: process.env.SMTP_USER,
-            subject: 'Password Reset',
-            text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n` +
-                  `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
-                  `${resetUrl}\n\n` +
-                  `If you did not request this, please ignore this email and your password will remain unchanged.\n`
+            from: process.env.SMTP_USER?.trim(),
+            subject: 'Your Password Reset OTP - Attendance Pro',
+            text: `Your One-Time Password (OTP) for resetting your password is: ${otp}`,
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; padding: 40px; color: #1e293b;">
+                    <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 24px; padding: 40px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 24px;">
+                            <h1 style="color: #6366f1; margin: 0; font-size: 28px; font-weight: 800;">Attendance Pro</h1>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 16px;">Security Verification</p>
+                        </div>
+                        <p style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center;">
+                            You requested to reset your password. Use the following 6-digit One-Time Password (OTP) to proceed:
+                        </p>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; text-align: center; margin: 32px 0;">
+                            <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #1e293b;">${otp}</span>
+                        </div>
+                        <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 0;">
+                            This OTP will expire in <strong>10 minutes</strong>.<br>
+                            If you didn't request this, please ignore this email.
+                        </p>
+                        <div style="border-top: 1px solid #f1f5f9; margin-top: 40px; padding-top: 24px; text-align: center; font-size: 12px; color: #cbd5e1;">
+                            &copy; ${new Date().getFullYear()} Attendance Pro. Modern Attendance Management.
+                        </div>
+                    </div>
+                </div>
+            `
         };
 
         await transporter.sendMail(mailOptions);
-        res.json({ message: 'Reset email sent' });
+        res.json({ message: 'OTP sent to your email' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error sending email' });
+        console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Error sending OTP' });
     }
 });
 
-// Reset Password
-app.post('/api/reset-password/:token', async (req, res) => {
+// Reset Password using OTP
+app.post('/api/reset-password-otp', async (req, res) => {
+    const { email, otp, password } = req.body;
+    if (!email || !otp || !password) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
     try {
         const user = await User.findOne({
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: { $gt: Date.now() }
+            email: email.trim(),
+            resetPasswordOTP: otp.trim(),
+            resetPasswordOTPExpires: { $gt: Date.now() }
         });
 
-        if (!user) return res.status(400).json({ error: 'Password reset token is invalid or has expired' });
+        if (!user) return res.status(400).json({ error: 'Invalid or expired OTP' });
 
-        user.password_hash = await bcrypt.hash(req.body.password, 10);
+        user.password_hash = await bcrypt.hash(password, 10);
+        user.resetPasswordOTP = undefined;
+        user.resetPasswordOTPExpires = undefined;
+        // Also clear old token fields if they exist
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
+        
         await user.save();
 
-        res.json({ message: 'Password has been reset' });
+        res.json({ message: 'Password has been reset successfully' });
     } catch (err) {
+        console.error('Reset password error:', err);
         res.status(500).json({ error: 'Error resetting password' });
     }
 });
@@ -333,3 +367,6 @@ app.delete('/api/subjects/:id', requireAuth, async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+
