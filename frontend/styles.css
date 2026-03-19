@@ -260,6 +260,15 @@ h1, h2, h3, h4 {
 .analysis-text span.positive { color: #059669; font-weight: 700; }
 .analysis-text span.negative { color: #dc2626; font-weight: 700; }
 
+.last-updated {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
 /* Action Buttons */
 .action-buttons {
     display: flex;

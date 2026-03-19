@@ -124,6 +124,16 @@ function calculateStatus(attended, total) {
     }
 }
 
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Formatting: Mar 19, 10:39 AM
+    const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return 'Updated: ' + date.toLocaleDateString('en-US', options);
+}
+
 // Render the application
 function render() {
     subjectsContainer.innerHTML = '';
@@ -168,6 +178,11 @@ function render() {
         const statusBox = clone.querySelector('.status-message');
         const calc = calculateStatus(subject.attended, subject.total);
         statusBox.innerHTML = calc.message;
+
+        const lastUpdatedEl = clone.querySelector('.last-updated');
+        if (lastUpdatedEl) {
+            lastUpdatedEl.textContent = formatDate(subject.updatedAt || subject.createdAt);
+        }
 
         clone.querySelector('.attended-btn').addEventListener('click', () => {
             updateSubject(subject._id, subject.name, subject.attended + 1, subject.total + 1);
